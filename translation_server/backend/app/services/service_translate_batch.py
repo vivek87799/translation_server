@@ -1,5 +1,6 @@
 from fastapi import status, HTTPException
 from concurrent.futures import ProcessPoolExecutor
+import asyncio
 from elasticsearch import AsyncElasticsearch
 from typing import List
 
@@ -18,14 +19,22 @@ async def task(src: str, es):
             }
         }
     
-    val = ElasticsearchClient.es.search(
+    val = await ElasticsearchClient.es.search(
         index = "tmx_data", # Parameters.ES_INDEX,
         query= query_body
     )
     
     # val = await es.search(index="tmx_data", query={"match": {"src": "mail"}})
+    val = val ['hits']['hits']
+    results = []
+    try:
+        for k in val:
+            results.append(k['_source'])
+    except Exception as error:
+        return str(error)
     
-    return val["hits"]["hits"]# str(len(val['hits']['hits']))
+    
+    return results # str(len(val['hits']['hits']))
 
 async def run_manager(str_query: List[str]):
     results = []
@@ -42,11 +51,11 @@ async def run_manager(str_query: List[str]):
             results  = "works"
         """
         for src_sent in str_query:
-            results.append(asyncio.create_task(task(src_sent, ElasticsearchClient.get_conneciton())))
+            results.append(asyncio.create_task(task(src_sent, ElasticsearchClient.es)))
     
     except Exception as error:
-        return error
-    return asyncio.gather(*results)
+        return str(error)
+    return await asyncio.gather(*results)
 
 async def translate_batch(data: schemas.TranslationDataRequest)-> schemas.TranslationDataResponse:
     try:
@@ -54,6 +63,7 @@ async def translate_batch(data: schemas.TranslationDataRequest)-> schemas.Transl
         
         """
         str_query = [d.src_sent for d in data.__root__]
+        # val = await ElasticsearchClient.es.search(index="tmx_data", query={"match": {"src": "mail"}})
         return await run_manager(str_query)
         
     except Exception as error:

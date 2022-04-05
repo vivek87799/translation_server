@@ -25,7 +25,7 @@ app = get_application()
 
 @app.on_event("shutdown")
 async def app_shutdown():
-    await es.close()
+    await ElasticsearchClient.es.close()
 """
 app = FastAPI()
 
