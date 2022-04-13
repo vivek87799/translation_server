@@ -1,5 +1,5 @@
-FROM python:3.8-slim-buster
-
+# FROM python:3.8-slim-buster
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8-2021-10-02
 WORKDIR /backend
 
 ENV PYTHONDONTWRITEBYTECODE 1
